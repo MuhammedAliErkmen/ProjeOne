@@ -1,5 +1,5 @@
 // C:\Erkmen\ProjeOne\src\services\projects.service.js
-const { sql } = require("../../db");
+const { sql } = require("../db");
 const ProjectsRepo = require("../repositories/projects.repo");
 const { mapProjectRowToUi } = require("../mappers/projectMapper");
 const { asStr, asIdStr, asInt, normalizeDoneType, newProjectId } = require("../utils/convert");

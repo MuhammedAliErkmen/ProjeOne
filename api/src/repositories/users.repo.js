@@ -1,5 +1,5 @@
 // C:\Erkmen\ProjeOne\src\repositories\users.repo.js
-const { sql, getPool } = require("../../db");
+const { sql, getPool } = require("../db");
 
 async function listUsers() {
   const pool = await getPool();

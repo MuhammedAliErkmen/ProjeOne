@@ -1,5 +1,5 @@
 // C:\Erkmen\ProjeOne\src\repositories\projects.repo.js
-const { sql, getPool } = require("../../db");
+const { sql, getPool } = require("../db");
 const { txQuery } = require("../db/txQuery");
 
 async function listProjectRows() {

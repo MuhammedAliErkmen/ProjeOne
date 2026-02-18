@@ -1,5 +1,5 @@
   // C:\Erkmen\ProjeOne\src\db\txQuery.js
-const { sql } = require("../../db");
+const { sql } = require("../db");
 
 async function txQuery(tx, text, params = []) {
   const req = new sql.Request(tx);
