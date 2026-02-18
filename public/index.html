@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — İş Analizi</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="login-only">
+
+  <!-- APP -->
+  <div class="app-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">BA</div>
+        <span class="logo-text">Dashboard</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" id="navDashboard" onclick="App.setPage('dashboard'); return false;">
+          <span class="icon">📊</span>
+          <span class="label">Proje Panosu</span>
+        </a>
+
+        <a href="#" class="nav-item" id="navUsers" onclick="App.setPage('users'); return false;">
+          <span class="icon">👥</span>
+          <span class="label">Ekibimiz</span>
+        </a>
+
+        <a href="#" class="nav-item" id="navSettings" onclick="App.setPage('settings'); return false;">
+          <span class="icon">⚙️</span>
+          <span class="label">Ayarlar</span>
+        </a>
+
+        <a href="#" class="nav-item" id="navProjectList" onclick="App.setPage('list'); return false;">
+          <span class="icon">📑</span>
+          <span class="label">Proje Listesi</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="App.doLogout()">
+          <span class="icon">🚪</span>
+          <span class="label">Oturumu Kapat</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="content-area">
+
+      <header>
+        <div class="header-left">
+          <button id="btnSidebarToggle"
+                  class="btn btn-secondary icon-btn"
+                  style="margin-right:15px; background:none;"
+                  aria-label="Menüyü aç/kapat">☰</button>
+          <h1 id="pageTitle">Proje Panosu</h1>
+        </div>
+
+        <div class="header-right">
+          <div id="headerSearch" class="search-box">
+            <span>🔍</span>
+            <input id="q" type="text" placeholder="Proje veya açıklama ara..." />
+          </div>
+
+          <div class="header-actions" id="headerActions">
+            <button class="btn btn-primary" id="btnNewProject">+ Yeni Proje</button>
+            <button class="btn btn-secondary icon-btn" onclick="App.openNotifications()" title="Bildirimler"
+              aria-label="Bildirimler">🔔</button>
+          </div>
+
+          <div id="boardNav" class="view-toggle">
+            <button id="btnViewBoard" class="active" onclick="App.setView('board')">Pano</button>
+            <button id="btnViewTimeline" onclick="App.setView('timeline')">Zaman Çizelgesi</button>
+          </div>
+
+          <div id="sortModeToggle" class="sort-toggle">
+            <button data-mode="auto" class="active">Otomatik</button>
+            <button data-mode="manual">Manuel</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="wrap">
+        <!-- Dashboard -->
+        <div id="pageDashboard" class="page-view active">
+          <section class="kpis">
+            <div class="kpi" id="kpiTotal" onclick="App.filterByStatus(null)">
+              <div class="v" id="kTotal">0</div>
+              <div class="l">Toplam Proje</div>
+            </div>
+
+            <div class="kpi" id="kpiNew" onclick="App.filterByStatus('new')">
+              <div class="v" id="kNew">0</div>
+              <div class="l"><span class="dot" style="background:var(--bad)"></span> Başlamadı</div>
+            </div>
+
+            <div class="kpi" id="kpiProg" onclick="App.filterByStatus('prog')">
+              <div class="v" id="kProg">0</div>
+              <div class="l"><span class="dot" style="background:var(--warn)"></span> Devam Ediyor</div>
+            </div>
+
+            <div class="kpi" id="kpiDoneDev" onclick="App.filterByStatus('done-dev')">
+              <div class="v" id="kDoneDev">0</div>
+              <div class="l"><span class="dot" style="background:var(--focus)"></span> Tamamlandı (Geliştirme)</div>
+            </div>
+
+            <div class="kpi" id="kpiDone" onclick="App.filterByStatus('done')">
+              <div class="v" id="kDone">0</div>
+              <div class="l"><span class="dot" style="background:var(--good)"></span> Tamamlandı</div>
+            </div>
+
+            <div class="kpi" id="kpiAvg" style="cursor:default;">
+              <div class="v" id="kAvg">0%</div>
+              <div class="l">Ortalama İlerleme</div>
+            </div>
+          </section>
+
+          <div id="viewBoard">
+            <section class="section">
+              <div class="section-h">
+                <h2><span class="dot" style="background:var(--bad)"></span> Başlamadı</h2>
+                <span class="pill" id="cNew">0</span>
+              </div>
+              <div class="cards" id="cardsNew"></div>
+              <div class="emptyState" id="emptyNew"
+                style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.</div>
+            </section>
+
+            <section class="section">
+              <div class="section-h">
+                <h2><span class="dot" style="background:var(--warn)"></span> Devam Ediyor</h2>
+                <span class="pill" id="cProg">0</span>
+              </div>
+              <div class="cards" id="cardsProg"></div>
+              <div class="emptyState" id="emptyProg"
+                style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.</div>
+            </section>
+
+            <section class="section">
+              <div class="section-h">
+                <h2><span class="dot" style="background:var(--focus)"></span> Tamamlandı (Geliştirme)</h2>
+                <span class="pill" id="cDoneDev">0</span>
+              </div>
+              <div class="cards" id="cardsDoneDev"></div>
+              <div class="emptyState" id="emptyDoneDev"
+                style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.</div>
+            </section>
+
+            <section class="section">
+              <div class="section-h">
+                <h2><span class="dot" style="background:var(--good)"></span> Tamamlandı</h2>
+                <span class="pill" id="cDone">0</span>
+              </div>
+              <div class="cards" id="cardsDone"></div>
+              <div class="emptyState" id="emptyDone"
+                style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.</div>
+            </section>
+          </div>
+
+          <div id="viewTimeline"
+            style="display:none; background:white; border-radius:20px; padding:32px; border:1px solid var(--line-dark);">
+            <div id="timelineToday"
+              style="font-size:12px; color:var(--muted); font-weight:700; margin-bottom:16px;"></div>
+            <div id="timelineCanvas"></div>
+          </div>
+        </div>
+
+        <!-- Team -->
+        <div id="pageUsers" class="page-view">
+          <div class="team-container">
+            <div class="team-header">
+              <h2>Ekibimiz</h2>
+              <button class="btn btn-primary" id="btnAddUser" onclick="App.openUserAdd()">+ Yeni Ekip Üyesi</button>
+            </div>
+            <div class="user-grid" id="userListGrid"></div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="pageSettings" class="page-view">
+          <div class="team-container">
+            <div class="team-header">
+              <h2>Ayarlar</h2>
+            </div>
+
+            <div class="settings-panels">
+              <div class="panel">
+                <div class="panel-head">
+                  <h3>Kendi Şifrem</h3>
+                  <div class="panel-sub">Mevcut şifren ile yeni şifreni güncelle</div>
+                </div>
+                <div class="panel-body">
+                  <button class="btn btn-primary" id="btnOpenMyPassword">Şifremi Güncelle</button>
+                </div>
+              </div>
+
+              <div class="panel admin-only" id="adminPassPanel">
+                <div class="panel-head">
+                  <h3>Admin: Kullanıcı Şifresi</h3>
+                  <div class="panel-sub">Tüm kullanıcılar için şifre güncelle</div>
+                </div>
+                <div class="panel-body">
+                  <div class="form-group">
+                    <label>Kullanıcı Seç</label>
+                    <select id="adminPassUserSelect" class="form-control"></select>
+                  </div>
+                  <div class="form-group">
+                    <label>Yeni Şifre</label>
+                    <input id="inpAdminNewPass" type="password" class="form-control" placeholder="••••••••">
+                  </div>
+                  <div class="form-group">
+                    <label>Yeni Şifre (Tekrar)</label>
+                    <input id="inpAdminNewPass2" type="password" class="form-control" placeholder="••••••••">
+                  </div>
+                  <button class="btn btn-primary" id="btnAdminChangePassword">Şifreyi Güncelle</button>
+                  <div id="adminPassMsg" class="form-msg"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- List -->
+        <div id="pageList" class="page-view">
+          <div class="team-container">
+            <div class="team-header">
+              <h2>Tüm Projeler</h2>
+            </div>
+
+            <div style="overflow-x:auto;">
+              <table class="data-table sortable-table">
+                <thead>
+                  <tr>
+                    <th onclick="App.setSort?.('ad')" style="cursor:pointer;">
+                      Proje <span id="sort_ad" class="sort-icon"></span>
+                    </th>
+                    <th onclick="App.setSort?.('alan')" style="cursor:pointer;">
+                      Alan <span id="sort_alan" class="sort-icon"></span>
+                    </th>
+                    <th>Sahip</th>
+                    <th>Durum</th>
+                    <th>İlerleme</th>
+                    <th>Bitiş</th>
+                    <th>İşlem</th>
+                  </tr>
+
+                  <tr class="filter-row">
+                    <td><input type="text" id="filter_ad" class="form-control table-filter-input" placeholder="Ara..."
+                        oninput="App.renderProjectList()"></td>
+                    <td><input type="text" id="filter_alan" class="form-control table-filter-input" placeholder="Ara..."
+                        oninput="App.renderProjectList()"></td>
+                    <td>
+                      <select id="filter_owner" class="form-control table-filter-input"
+                        onchange="App.renderProjectList()">
+                        <option value="all">Hepsi</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select id="filter_status" class="form-control table-filter-input"
+                        onchange="App.renderProjectList()">
+                        <option value="all">Hepsi</option>
+                        <option value="new">Başlamadı</option>
+                        <option value="prog">Devam Ediyor</option>
+                        <option value="done-dev">Tamamlandı (Geliştirme)</option>
+                        <option value="done">Tamamlandı</option>
+                      </select>
+                    </td>
+                    <td><input type="number" id="filter_pct" class="form-control table-filter-input" placeholder="Min %"
+                        oninput="App.renderProjectList()"></td>
+                    <td><input type="text" id="filter_date" class="form-control table-filter-input" placeholder="Ara..."
+                        oninput="App.renderProjectList()"></td>
+                    <td></td>
+                  </tr>
+                </thead>
+                <tbody id="projectListTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+    <!-- LOGIN -->
+  <div id="loginOverlay">
+    <div class="login-card">
+      <h2 style="text-align:center; margin-bottom:40px; font-weight:800; letter-spacing:-0.03em;">BA DASHBOARD</h2>
+
+      <form id="loginForm" autocomplete="off">
+        <div class="form-group">
+          <label>Giriş Yapan</label>
+          <input id="inpLoginUser" name="login_user" class="form-control" placeholder="Kullanıcı adı"
+       autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
+
+        <div class="form-group" style="margin-bottom:40px;">
+          <label>Erişim Şifresi</label>
+          <input type="password" id="inpLoginPass" name="login_pass" class="form-control" placeholder="••••••"
+       autocomplete="new-password">
+        </div>
+
+        <button id="btnLogin" type="button" class="btn btn-primary" style="width:100%; height:48px;">Oturum Aç</button>
+        <p id="loginError" style="color:var(--bad); text-align:center; margin-top:20px; font-size:13px; font-weight:600;"></p>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Project Modal -->
+  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+       <h2 id="modalTitle">Proje Detay</h2>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="App.switchTab('tabDetails')">Detaylar</div>
+        <div class="tab" onclick="App.switchTab('tabComments')">Yorumlar</div>
+        <div class="tab" onclick="App.switchTab('tabHistory')">Proje Geçmişi</div>
+      </div>
+
+      <div class="modal-body">
+        <div id="projLenWarn" class="form-msg err" style="display:none; margin-bottom:12px;"></div>
+        <div id="tabDetails" class="tab-content active">
+
+          <div class="form-group">
+            <label>Proje Başlığı</label>
+            <input id="inpAd" class="form-control" placeholder="Örn: SAP Dönüşüm">
+          </div>
+
+          <div class="form-group">
+            <label>Açıklama</label>
+            <textarea id="inpDesc" class="form-control" rows="2" placeholder="Kısa bir özet..."></textarea>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label>Başlangıç</label>
+              <input type="date" id="inpStartDate" class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Bitiş</label>
+              <input type="date" id="inpDate" class="form-control">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label>İlerleme (%)</label>
+              <input type="number" id="inpPct" class="form-control" min="0" max="100">
+            </div>
+            <div class="form-group">
+              <label>Öncelik</label>
+              <select id="inpPriority" class="form-control">
+                <option value="Normal">Normal</option>
+                <option value="Yüksek">Yüksek</option>
+                <option value="Düşük">Düşük</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Alan</label>
+            <textarea id="inpAlan" class="form-control auto-grow" rows="2" placeholder="Örn: ERP, E-Ticaret, Raporlama"></textarea>
+          </div>
+
+          <div class="form-group" id="doneTypeWrap" style="display:none;">
+            <label>Tamamlanma Tipi</label>
+            <select id="inpDoneType" class="form-control">
+              <option value="done">Tamamlandı</option>
+              <option value="done-dev">Tamamlandı (Geliştirme)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Son Teslim Edilen</label>
+            <textarea id="inpLastDelivered" class="form-control auto-grow" rows="2" placeholder="Örn: Analiz dokümanı paylaşıldı"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Sonraki Adım</label>
+            <textarea id="inpNextStep" class="form-control auto-grow" rows="2" placeholder="Örn: Test senaryoları hazırlanacak"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Sahipler</label>
+            <div class="tag-container" id="ownersTagContainer"></div>
+            <div style="display:flex; gap:8px;">
+              <select id="inpOwnerSelect" class="form-control" style="flex:1"></select>
+              <button id="btnAddOwner" class="btn btn-secondary" style="width:42px;">+</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ana Proje</label>
+            <select id="inpParentSelect" class="form-control"></select>
+          </div>
+
+          <div class="form-group">
+            <label>Ekler</label>
+            <div id="fileList"></div>
+            <input type="file" id="inpFile" style="display:none">
+            <button class="btn btn-secondary" style="width:100%;" onclick="document.getElementById('inpFile').click()">📎 Dosya Yükle</button>
+          </div>
+        </div>
+
+        <div id="tabComments" class="tab-content">
+          <div id="commentList"></div>
+          <div style="display:flex; gap:10px; margin-top:16px;">
+            <input id="inpComment" class="form-control" placeholder="Yorum ekle...">
+            <button id="btnPostComment" class="btn btn-primary">Paylaş</button>
+          </div>
+        </div>
+
+        <div id="tabHistory" class="tab-content">
+          <div id="historyList"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btnDelete" class="btn btn-danger" style="margin-right:auto;">Projeyi Sil</button>
+        <button id="btnCancel" class="btn btn-secondary">Vazgeç</button>
+        <button id="btnSave" class="btn btn-primary">Güncellemeleri Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Modal -->
+  <div class="modal-overlay" id="userModalOverlay" role="dialog" aria-modal="true" style="justify-content:center;">
+    <div class="modal-content" style="max-width:400px; height:auto; border-radius:24px; margin:auto;">
+      <div class="modal-header">
+        <h2 id="userModalTitle">Yeni Ekip Üyesi</h2>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Tam İsim</label>
+          <input id="inpUserName" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Ünvan</label>
+          <input id="inpUserTitle" class="form-control">
+        </div>
+        <div class="form-group" id="userPasswordWrap">
+          <label>Şifre</label>
+          <input id="inpUserPass" type="password" class="form-control" placeholder="••••••••">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="U.closeOverlay('#userModalOverlay')" class="btn btn-secondary">Vazgeç</button>
+        <button id="btnUserSave" onclick="App.saveUser()" class="btn btn-primary">Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal-overlay" id="myPassOverlay" role="dialog" aria-modal="true" style="justify-content:center;">
+    <div class="modal-content" style="max-width:420px; height:auto; border-radius:24px; margin:auto;">
+      <div class="modal-header">
+        <h2>Şifre Güncelle</h2>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Mevcut Şifre</label>
+          <input id="inpMyCurrentPass" type="password" class="form-control" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Yeni Şifre</label>
+          <input id="inpMyNewPass" type="password" class="form-control" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Yeni Şifre (Tekrar)</label>
+          <input id="inpMyNewPass2" type="password" class="form-control" placeholder="••••••••">
+        </div>
+        <div id="myPassMsg" class="form-msg"></div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="App.closeMyPasswordModal()" class="btn btn-secondary">Vazgeç</button>
+        <button id="btnChangeMyPassword" class="btn btn-primary">Güncelle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div class="modal-overlay" id="notifOverlay" role="dialog" aria-modal="true" style="justify-content:center;">
+    <div class="modal-content" style="max-width:500px; height:auto; border-radius:24px; margin:auto;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Aktiviteler</h2>
+        <button onclick="U.closeOverlay('#notifOverlay')"
+          style="border:none; background:none; font-size:24px; cursor:pointer;" aria-label="Kapat">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="notif-tabs" id="notifTabs">
+          <button class="notif-tab active" data-tab="all">Tümü</button>
+          <button class="notif-tab" data-tab="mentions">Etiketlerim</button>
+        </div>
+
+        <div id="notifTabAll" class="notif-panel active">
+          <div id="globalHistoryList"></div>
+        </div>
+
+        <div id="notifTabMentions" class="notif-panel">
+          <div id="mentionList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/timeline.js"></script>
+
+  <!-- ✅ KRİTİK: başındaki / kaldırıldı -->
+  <script src="js/main.js?v=2"></script>
+</body>
+</html>
