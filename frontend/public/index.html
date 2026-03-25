@@ -5,14 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard — İş Analizi</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    #kpiCancelled.active {
+      border-color: #6b7280;
+      box-shadow: inset 0 0 0 1px #6b7280;
+    }
+
+    #cardsCancelled .card {
+      background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
+    }
+
+    #cardsCancelled .title,
+    #cardsCancelled .desc {
+      color: #374151;
+    }
+
+    #cardsCancelled .card-footer {
+      border-top-color: #d1d5db;
+    }
+
+    .child-badge.b-cancelled {
+      background: #f3f4f6;
+      color: #4b5563;
+      border: 1px solid #d1d5db;
+    }
+  </style>
 </head>
 
 <body class="login-only">
-
-  <!-- APP -->
   <div class="app-container">
-
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo">BA</div>
@@ -49,9 +70,7 @@
       </div>
     </aside>
 
-    <!-- MAIN -->
     <main class="content-area">
-
       <header>
         <div class="header-left">
           <button id="btnSidebarToggle"
@@ -69,8 +88,7 @@
 
           <div class="header-actions" id="headerActions">
             <button class="btn btn-primary" id="btnNewProject">+ Yeni Proje</button>
-            <button class="btn btn-secondary icon-btn" onclick="App.openNotifications()" title="Bildirimler"
-              aria-label="Bildirimler">🔔</button>
+            <button class="btn btn-secondary icon-btn" onclick="App.openNotifications()" title="Bildirimler" aria-label="Bildirimler">🔔</button>
           </div>
 
           <div id="boardNav" class="view-toggle">
@@ -86,7 +104,6 @@
       </header>
 
       <div class="wrap">
-        <!-- Dashboard -->
         <div id="pageDashboard" class="page-view active">
           <section class="kpis">
             <div class="kpi" id="kpiTotal" onclick="App.filterByStatus(null)">
@@ -114,6 +131,11 @@
               <div class="l"><span class="dot" style="background:var(--good)"></span> Tamamlandı</div>
             </div>
 
+            <div class="kpi" id="kpiCancelled" onclick="App.filterByStatus('cancelled')">
+              <div class="v" id="kCancelled">0</div>
+              <div class="l"><span class="dot" style="background:#6b7280"></span> İptal Edildi</div>
+            </div>
+
             <div class="kpi" id="kpiAvg" style="cursor:default;">
               <div class="v" id="kAvg">0%</div>
               <div class="l">Ortalama İlerleme</div>
@@ -121,60 +143,68 @@
           </section>
 
           <div id="viewBoard">
-            <section class="section">
+            <section class="section" id="sectionNew">
               <div class="section-h">
                 <h2><span class="dot" style="background:var(--bad)"></span> Başlamadı</h2>
                 <span class="pill" id="cNew">0</span>
               </div>
               <div class="cards" id="cardsNew"></div>
-              <div class="emptyState" id="emptyNew"
-                style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
-                Bu kategoride henüz proje bulunmuyor.</div>
+              <div class="emptyState" id="emptyNew" style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.
+              </div>
             </section>
 
-            <section class="section">
+            <section class="section" id="sectionProg">
               <div class="section-h">
                 <h2><span class="dot" style="background:var(--warn)"></span> Devam Ediyor</h2>
                 <span class="pill" id="cProg">0</span>
               </div>
               <div class="cards" id="cardsProg"></div>
-              <div class="emptyState" id="emptyProg"
-                style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
-                Bu kategoride henüz proje bulunmuyor.</div>
+              <div class="emptyState" id="emptyProg" style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.
+              </div>
             </section>
 
-            <section class="section">
+            <section class="section" id="sectionDoneDev">
               <div class="section-h">
                 <h2><span class="dot" style="background:var(--focus)"></span> Tamamlandı (Geliştirme)</h2>
                 <span class="pill" id="cDoneDev">0</span>
               </div>
               <div class="cards" id="cardsDoneDev"></div>
-              <div class="emptyState" id="emptyDoneDev"
-                style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
-                Bu kategoride henüz proje bulunmuyor.</div>
+              <div class="emptyState" id="emptyDoneDev" style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.
+              </div>
             </section>
 
-            <section class="section">
+            <section class="section" id="sectionDone">
               <div class="section-h">
                 <h2><span class="dot" style="background:var(--good)"></span> Tamamlandı</h2>
                 <span class="pill" id="cDone">0</span>
               </div>
               <div class="cards" id="cardsDone"></div>
-              <div class="emptyState" id="emptyDone"
-                style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
-                Bu kategoride henüz proje bulunmuyor.</div>
+              <div class="emptyState" id="emptyDone" style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.
+              </div>
+            </section>
+
+            <section class="section" id="sectionCancelled">
+              <div class="section-h">
+                <h2><span class="dot" style="background:#6b7280"></span> İptal Edildi</h2>
+                <span class="pill" id="cCancelled">0</span>
+              </div>
+              <div class="cards" id="cardsCancelled"></div>
+              <div class="emptyState" id="emptyCancelled" style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">
+                Bu kategoride henüz proje bulunmuyor.
+              </div>
             </section>
           </div>
 
-          <div id="viewTimeline"
-            style="display:none; background:white; border-radius:20px; padding:32px; border:1px solid var(--line-dark);">
-            <div id="timelineToday"
-              style="font-size:12px; color:var(--muted); font-weight:700; margin-bottom:16px;"></div>
+          <div id="viewTimeline" style="display:none; background:white; border-radius:20px; padding:32px; border:1px solid var(--line-dark);">
+            <div id="timelineToday" style="font-size:12px; color:var(--muted); font-weight:700; margin-bottom:16px;"></div>
             <div id="timelineCanvas"></div>
           </div>
         </div>
 
-        <!-- Team -->
         <div id="pageUsers" class="page-view">
           <div class="team-container">
             <div class="team-header">
@@ -185,7 +215,6 @@
           </div>
         </div>
 
-        <!-- Settings -->
         <div id="pageSettings" class="page-view">
           <div class="team-container">
             <div class="team-header">
@@ -229,7 +258,6 @@
           </div>
         </div>
 
-        <!-- List -->
         <div id="pageList" class="page-view">
           <div class="team-container">
             <div class="team-header">
@@ -240,12 +268,8 @@
               <table class="data-table sortable-table">
                 <thead>
                   <tr>
-                    <th onclick="App.setSort?.('ad')" style="cursor:pointer;">
-                      Proje <span id="sort_ad" class="sort-icon"></span>
-                    </th>
-                    <th onclick="App.setSort?.('alan')" style="cursor:pointer;">
-                      Alan <span id="sort_alan" class="sort-icon"></span>
-                    </th>
+                    <th onclick="App.setSort?.('ad')" style="cursor:pointer;">Proje <span id="sort_ad" class="sort-icon"></span></th>
+                    <th onclick="App.setSort?.('alan')" style="cursor:pointer;">Alan <span id="sort_alan" class="sort-icon"></span></th>
                     <th>Sahip</th>
                     <th>Durum</th>
                     <th>İlerleme</th>
@@ -254,30 +278,25 @@
                   </tr>
 
                   <tr class="filter-row">
-                    <td><input type="text" id="filter_ad" class="form-control table-filter-input" placeholder="Ara..."
-                        oninput="App.renderProjectList()"></td>
-                    <td><input type="text" id="filter_alan" class="form-control table-filter-input" placeholder="Ara..."
-                        oninput="App.renderProjectList()"></td>
+                    <td><input type="text" id="filter_ad" class="form-control table-filter-input" placeholder="Ara..." oninput="App.renderProjectList()"></td>
+                    <td><input type="text" id="filter_alan" class="form-control table-filter-input" placeholder="Ara..." oninput="App.renderProjectList()"></td>
                     <td>
-                      <select id="filter_owner" class="form-control table-filter-input"
-                        onchange="App.renderProjectList()">
+                      <select id="filter_owner" class="form-control table-filter-input" onchange="App.renderProjectList()">
                         <option value="all">Hepsi</option>
                       </select>
                     </td>
                     <td>
-                      <select id="filter_status" class="form-control table-filter-input"
-                        onchange="App.renderProjectList()">
+                      <select id="filter_status" class="form-control table-filter-input" onchange="App.renderProjectList()">
                         <option value="all">Hepsi</option>
                         <option value="new">Başlamadı</option>
                         <option value="prog">Devam Ediyor</option>
                         <option value="done-dev">Tamamlandı (Geliştirme)</option>
                         <option value="done">Tamamlandı</option>
+                        <option value="cancelled">İptal Edildi</option>
                       </select>
                     </td>
-                    <td><input type="number" id="filter_pct" class="form-control table-filter-input" placeholder="Min %"
-                        oninput="App.renderProjectList()"></td>
-                    <td><input type="text" id="filter_date" class="form-control table-filter-input" placeholder="Ara..."
-                        oninput="App.renderProjectList()"></td>
+                    <td><input type="number" id="filter_pct" class="form-control table-filter-input" placeholder="Min %" oninput="App.renderProjectList()"></td>
+                    <td><input type="text" id="filter_date" class="form-control table-filter-input" placeholder="Ara..." oninput="App.renderProjectList()"></td>
                     <td></td>
                   </tr>
                 </thead>
@@ -286,12 +305,10 @@
             </div>
           </div>
         </div>
-
       </div>
     </main>
   </div>
 
-    <!-- LOGIN -->
   <div id="loginOverlay">
     <div class="login-card">
       <h2 style="text-align:center; margin-bottom:40px; font-weight:800; letter-spacing:-0.03em;">BA DASHBOARD</h2>
@@ -299,14 +316,12 @@
       <form id="loginForm" autocomplete="off">
         <div class="form-group">
           <label>Giriş Yapan</label>
-          <input id="inpLoginUser" name="login_user" class="form-control" placeholder="Kullanıcı adı"
-       autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input id="inpLoginUser" name="login_user" class="form-control" placeholder="Kullanıcı adı" autocomplete="off" autocapitalize="off" spellcheck="false">
         </div>
 
         <div class="form-group" style="margin-bottom:40px;">
           <label>Erişim Şifresi</label>
-          <input type="password" id="inpLoginPass" name="login_pass" class="form-control" placeholder="••••••"
-       autocomplete="new-password">
+          <input type="password" id="inpLoginPass" name="login_pass" class="form-control" placeholder="••••••" autocomplete="new-password">
         </div>
 
         <button id="btnLogin" type="button" class="btn btn-primary" style="width:100%; height:48px;">Oturum Aç</button>
@@ -315,12 +330,10 @@
     </div>
   </div>
 
-
-  <!-- Project Modal -->
   <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true">
     <div class="modal-content">
       <div class="modal-header">
-       <h2 id="modalTitle">Proje Detay</h2>
+        <h2 id="modalTitle">Proje Detay</h2>
       </div>
 
       <div class="tabs">
@@ -332,7 +345,6 @@
       <div class="modal-body">
         <div id="projLenWarn" class="form-msg err" style="display:none; margin-bottom:12px;"></div>
         <div id="tabDetails" class="tab-content active">
-
           <div class="form-group">
             <label>Proje Başlığı</label>
             <input id="inpAd" class="form-control" placeholder="Örn: SAP Dönüşüm">
@@ -429,13 +441,14 @@
 
       <div class="modal-footer">
         <button id="btnDelete" class="btn btn-danger" style="margin-right:auto;">Projeyi Sil</button>
+        <button id="btnCancelProject" class="btn btn-secondary">İptal Et</button>
+        <button id="btnReactivateProject" class="btn btn-secondary">Aktif Et</button>
         <button id="btnCancel" class="btn btn-secondary">Vazgeç</button>
         <button id="btnSave" class="btn btn-primary">Güncellemeleri Kaydet</button>
       </div>
     </div>
   </div>
 
-  <!-- User Modal -->
   <div class="modal-overlay" id="userModalOverlay" role="dialog" aria-modal="true" style="justify-content:center;">
     <div class="modal-content" style="max-width:400px; height:auto; border-radius:24px; margin:auto;">
       <div class="modal-header">
@@ -462,7 +475,6 @@
     </div>
   </div>
 
-  <!-- Change Password Modal -->
   <div class="modal-overlay" id="myPassOverlay" role="dialog" aria-modal="true" style="justify-content:center;">
     <div class="modal-content" style="max-width:420px; height:auto; border-radius:24px; margin:auto;">
       <div class="modal-header">
@@ -490,13 +502,11 @@
     </div>
   </div>
 
-  <!-- Notifications -->
   <div class="modal-overlay" id="notifOverlay" role="dialog" aria-modal="true" style="justify-content:center;">
     <div class="modal-content" style="max-width:500px; height:auto; border-radius:24px; margin:auto;">
       <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
         <h2>Aktiviteler</h2>
-        <button onclick="U.closeOverlay('#notifOverlay')"
-          style="border:none; background:none; font-size:24px; cursor:pointer;" aria-label="Kapat">×</button>
+        <button onclick="U.closeOverlay('#notifOverlay')" style="border:none; background:none; font-size:24px; cursor:pointer;" aria-label="Kapat">×</button>
       </div>
       <div class="modal-body">
         <div class="notif-tabs" id="notifTabs">
@@ -519,8 +529,6 @@
   <script src="js/api.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/timeline.js"></script>
-
-  <!-- ✅ KRİTİK: başındaki / kaldırıldı -->
-  <script src="js/main.js?v=2"></script>
+  <script src="js/main.js?v=3"></script>
 </body>
 </html>

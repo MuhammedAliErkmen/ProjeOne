@@ -61,6 +61,7 @@
   }
 
   function statusLabel(st) {
+    if (st === "cancelled") return "İptal Edildi";
     return st === "done-dev" ? "Tamamlandı (Geliştirme)"
       : st === "done" ? "Tamamlandı"
       : st === "prog" ? "Devam Ediyor"
@@ -69,6 +70,7 @@
 
   function projectStatus(p) {
     if (window.Dashboard?.statusOf) return window.Dashboard.statusOf(p);
+    if (String(p?.status || "").toLowerCase() === "cancelled") return "cancelled";
     const pct = Number(p?.yuzde) || 0;
     if (pct >= 100) return (String(p?.doneType || "").toLowerCase() === "done-dev") ? "done-dev" : "done";
     if (pct > 0) return "prog";
@@ -163,7 +165,8 @@
       new: "#kpiNew",
       prog: "#kpiProg",
       "done-dev": "#kpiDoneDev",
-      done: "#kpiDone"
+      done: "#kpiDone",
+      cancelled: "#kpiCancelled"
     };
 
     Object.values(map).forEach((sel) => {
@@ -186,10 +189,13 @@
   function filterByStatus(st) {
     if (!st) {
       state.filterStatuses.clear();
-    } else if (state.filterStatuses.has(st)) {
-      state.filterStatuses.delete(st);
     } else {
-      state.filterStatuses.add(st);
+      if (state.filterStatuses.has(st) && state.filterStatuses.size === 1) {
+        state.filterStatuses.clear();
+      } else {
+        state.filterStatuses.clear();
+        state.filterStatuses.add(st);
+      }
     }
 
     setKpiActive(state.filterStatuses);
@@ -450,6 +456,7 @@
       sonTeslimEdilen: "",
       priority: "Normal",
       doneType: null,
+      status: "",
       owners: [],
       files: [],
       comments: [],
@@ -570,6 +577,7 @@
 
   function renderProjectModal(isNew) {
     const p = state.editProject || projectDefaults();
+    const isCancelled = String(p.status || "").toLowerCase() === "cancelled";
 
     const mt = el("#modalTitle");
     if (mt) mt.textContent = isNew ? "Yeni Proje" : "Proje Detayı";
@@ -584,6 +592,8 @@
     el("#inpDoneType") && (el("#inpDoneType").value = p.doneType || "done");
     el("#inpLastDelivered") && (el("#inpLastDelivered").value = p.sonTeslimEdilen || "");
     el("#inpNextStep") && (el("#inpNextStep").value = p.next || "");
+    el("#btnCancelProject") && (el("#btnCancelProject").style.display = (!isNew && !isCancelled) ? "inline-flex" : "none");
+    el("#btnReactivateProject") && (el("#btnReactivateProject").style.display = (!isNew && isCancelled) ? "inline-flex" : "none");
 
     const doneWrap = el("#doneTypeWrap");
     if (doneWrap) doneWrap.style.display = (Number(p.yuzde) || 0) >= 100 ? "block" : "none";
@@ -614,6 +624,10 @@
     p.doneType = String(el("#inpDoneType")?.value || "done");
     p.sonTeslimEdilen = String(el("#inpLastDelivered")?.value || "");
     p.next = String(el("#inpNextStep")?.value || "");
+
+    if (String(p.status || "").toLowerCase() !== "cancelled") {
+      p.status = "";
+    }
 
     const parentId = String(el("#inpParentSelect")?.value || "").trim();
     p.parentId = parentId ? parentId : null;
@@ -696,6 +710,46 @@
     } catch (e) {
       if (isUnauthorizedErr(e)) return handleUnauthorized();
       alert("Silme hatası: " + (e?.message || e));
+    }
+  }
+
+  async function cancelProject() {
+    if (!state.activeProjectId || !state.editProject) {
+      U.closeOverlay("#modalOverlay");
+      return;
+    }
+    if (!confirm("Projeyi iptal edilmiş durumuna almak istiyor musun?")) return;
+
+    try {
+      const p = state.editProject;
+      p.status = "cancelled";
+      addHistory(p, "cancelled", "Proje iptal edildi");
+      await API.updateProject(state.activeProjectId, p);
+      await loadProjects();
+      U.closeOverlay("#modalOverlay");
+    } catch (e) {
+      if (isUnauthorizedErr(e)) return handleUnauthorized();
+      alert("İptal etme hatası: " + (e?.message || e));
+    }
+  }
+
+  async function reactivateProject() {
+    if (!state.activeProjectId || !state.editProject) {
+      U.closeOverlay("#modalOverlay");
+      return;
+    }
+    if (!confirm("Projeyi tekrar aktif duruma almak istiyor musun?")) return;
+
+    try {
+      const p = state.editProject;
+      p.status = "";
+      addHistory(p, "reactivated", "Proje tekrar aktif edildi");
+      await API.updateProject(state.activeProjectId, p);
+      await loadProjects();
+      U.closeOverlay("#modalOverlay");
+    } catch (e) {
+      if (isUnauthorizedErr(e)) return handleUnauthorized();
+      alert("Aktif etme hatası: " + (e?.message || e));
     }
   }
 
@@ -1265,6 +1319,8 @@
     el("#btnSave")?.addEventListener("click", saveProject);
     el("#btnCancel")?.addEventListener("click", closeProjectModal);
     el("#btnDelete")?.addEventListener("click", deleteProject);
+    el("#btnCancelProject")?.addEventListener("click", cancelProject);
+    el("#btnReactivateProject")?.addEventListener("click", reactivateProject);
 
     el("#btnSidebarToggle")?.addEventListener("click", () => {
       document.body.classList.toggle("sidebar-collapsed");

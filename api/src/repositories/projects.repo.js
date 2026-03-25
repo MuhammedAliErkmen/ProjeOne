@@ -19,6 +19,7 @@ async function listProjectRows() {
       p.sonTeslimEdilen,
       p.priority,
       p.doneType,
+      p.status,
       p.createdAt,
       p.updatedAt,
 
@@ -57,10 +58,10 @@ async function insertProject(tx, data) {
   await txQuery(tx, `
     INSERT INTO dbo.Projects
       (id, ad, aciklama, yuzde, sonTeslim, sahip, alan, next, parentId,
-       baslangicTarihi, sonTeslimEdilen, priority, doneType, createdAt, updatedAt)
+       baslangicTarihi, sonTeslimEdilen, priority, doneType, status, createdAt, updatedAt)
     VALUES
       (@id, @ad, @ac, @yz, @st, @sh, @al, @nx, @pid,
-       @bt, @ste, @pr, @dt, @ca, @ua)
+       @bt, @ste, @pr, @dt, @status, @ca, @ua)
   `, [
     { name: "id", type: sql.NVarChar, value: data.id },
     { name: "ad", type: sql.NVarChar, value: data.ad },
@@ -75,6 +76,7 @@ async function insertProject(tx, data) {
     { name: "ste", type: sql.NVarChar, value: data.sonTeslimEdilen },
     { name: "pr", type: sql.NVarChar, value: data.priority },
     { name: "dt", type: sql.NVarChar, value: data.doneType },
+    { name: "status", type: sql.NVarChar, value: data.status },
     { name: "ca", type: sql.DateTime2, value: data.createdAt },
     { name: "ua", type: sql.DateTime2, value: data.updatedAt },
   ]);
@@ -95,6 +97,7 @@ async function updateProject(tx, id, data) {
       sonTeslimEdilen = @ste,
       priority = @pr,
       doneType = @dt,
+      status = @status,
       updatedAt = @ua
     WHERE id = @id
   `, [
@@ -111,6 +114,7 @@ async function updateProject(tx, id, data) {
     { name: "ste", type: sql.NVarChar, value: data.sonTeslimEdilen },
     { name: "pr", type: sql.NVarChar, value: data.priority },
     { name: "dt", type: sql.NVarChar, value: data.doneType },
+    { name: "status", type: sql.NVarChar, value: data.status },
     { name: "ua", type: sql.DateTime2, value: data.updatedAt },
   ]);
 }

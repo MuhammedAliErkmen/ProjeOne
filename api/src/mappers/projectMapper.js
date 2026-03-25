@@ -87,6 +87,7 @@ function mapProjectRowToUi(row) {
   const safePct = Number.isFinite(pct) ? pct : 0;
 
   const doneType = (safePct >= 100) ? normalizeDoneType(r.doneType) : null;
+  const status = String(r.status || "").trim().toLowerCase();
 
   return {
     id: r.id,
@@ -102,6 +103,7 @@ function mapProjectRowToUi(row) {
     sonTeslimEdilen: r.sonTeslimEdilen ?? "",
     priority: r.priority ?? "Normal",
     doneType,
+    status,
     createdAt: r.createdAt ?? null,
     updatedAt: r.updatedAt ?? null,
 

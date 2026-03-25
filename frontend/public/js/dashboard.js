@@ -5,13 +5,14 @@
   const SORT_MODE_KEY = "ba_sort_mode_v1";
 
   const STATUS = {
-    new:        { key: "new",        cardsId: "cardsNew",     countId: "cNew",     emptyId: "emptyNew" },
-    prog:       { key: "prog",       cardsId: "cardsProg",    countId: "cProg",    emptyId: "emptyProg" },
-    "done-dev": { key: "done-dev",   cardsId: "cardsDoneDev", countId: "cDoneDev", emptyId: "emptyDoneDev" },
-    done:       { key: "done",       cardsId: "cardsDone",    countId: "cDone",    emptyId: "emptyDone" },
+    new:        { key: "new",        sectionId: "sectionNew",       cardsId: "cardsNew",       countId: "cNew",       emptyId: "emptyNew" },
+    prog:       { key: "prog",       sectionId: "sectionProg",      cardsId: "cardsProg",      countId: "cProg",      emptyId: "emptyProg" },
+    "done-dev": { key: "done-dev",   sectionId: "sectionDoneDev",   cardsId: "cardsDoneDev",   countId: "cDoneDev",   emptyId: "emptyDoneDev" },
+    done:       { key: "done",       sectionId: "sectionDone",      cardsId: "cardsDone",      countId: "cDone",      emptyId: "emptyDone" },
+    cancelled:  { key: "cancelled",  sectionId: "sectionCancelled", cardsId: "cardsCancelled", countId: "cCancelled", emptyId: "emptyCancelled" },
   };
 
-  // drag/drop için güncel liste tutulur
+  const DEFAULT_VISIBLE = ["new", "prog", "done-dev", "done"];
   const CURRENT = { projects: [] };
 
   function getSortMode() {
@@ -20,6 +21,7 @@
     catch {}
     return (v === "manual") ? "manual" : "auto";
   }
+
   function setSortMode(mode) {
     const v = (String(mode).toLowerCase() === "manual") ? "manual" : "auto";
     try { localStorage.setItem(SORT_MODE_KEY, v); } catch {}
@@ -34,19 +36,22 @@
         prog: Array.isArray(obj.prog) ? obj.prog : [],
         "done-dev": Array.isArray(obj["done-dev"]) ? obj["done-dev"] : [],
         done: Array.isArray(obj.done) ? obj.done : [],
+        cancelled: Array.isArray(obj.cancelled) ? obj.cancelled : [],
       };
     } catch {
-      return { new: [], prog: [], "done-dev": [], done: [] };
+      return { new: [], prog: [], "done-dev": [], done: [], cancelled: [] };
     }
   }
+
   function saveOrder(order) {
     try { localStorage.setItem(ORDER_KEY, JSON.stringify(order)); } catch {}
   }
+
   function upsertOrderList(order, statusKey, idsInDomOrder) {
     order[statusKey] = idsInDomOrder.map(String);
     for (const k of Object.keys(order)) {
       if (k === statusKey) continue;
-      order[k] = (order[k] || []).filter(x => !idsInDomOrder.includes(String(x)));
+      order[k] = (order[k] || []).filter((x) => !idsInDomOrder.includes(String(x)));
     }
     saveOrder(order);
   }
@@ -60,9 +65,11 @@
       return {};
     }
   }
+
   function saveChildOrder(obj) {
     try { localStorage.setItem(CHILD_ORDER_KEY, JSON.stringify(obj)); } catch {}
   }
+
   function setChildOrder(parentId, childIds) {
     const map = loadChildOrder();
     map[String(parentId)] = childIds.map(String);
@@ -85,6 +92,7 @@
   }
 
   function statusOf(p) {
+    if (String(p?.status || "").toLowerCase() === "cancelled") return "cancelled";
     const pct = Number(p?.yuzde) || 0;
     if (pct >= 100) return (String(p?.doneType || "").toLowerCase() === "done-dev") ? "done-dev" : "done";
     if (pct > 0) return "prog";
@@ -124,9 +132,9 @@
     const shown = arr.slice(0, max);
     const more = arr.length > max ? (arr.length - max) : 0;
 
-    const chips = shown.map(u => {
+    const chips = shown.map((u) => {
       const s = String(u || "").trim();
-      const initials = s ? s.split(/\s+/).slice(0, 2).map(x => x[0]).join("").toUpperCase() : "?";
+      const initials = s ? s.split(/\s+/).slice(0, 2).map((x) => x[0]).join("").toUpperCase() : "?";
       return `<div class="avatar-sm" title="${U.esc(s)}">${U.esc(initials)}</div>`;
     }).join("");
 
@@ -139,6 +147,7 @@
     if (p === "düşük" || p === "dusuk" || p === "low") return { cls: "prio-low", label: "Düşük" };
     return { cls: "prio-normal", label: "Normal" };
   }
+
   function priorityBadgeHtml(priorityRaw) {
     const m = priorityMeta(priorityRaw);
     return `<span class="prio-badge ${m.cls}" title="Öncelik: ${U.esc(m.label)}">${U.esc(m.label)}</span>`;
@@ -146,11 +155,13 @@
 
   function childBadge(st) {
     const label =
+      st === "cancelled" ? "İptal Edildi" :
       st === "done-dev" ? "Tamamlandı (Geliştirme)" :
       st === "done" ? "Tamamlandı" :
       st === "prog" ? "Devam Ediyor" : "Başlamadı";
 
     const cls =
+      st === "cancelled" ? "b-cancelled" :
       st === "done" ? "b-done" :
       st === "done-dev" ? "b-done-dev" :
       st === "prog" ? "b-prog" : "b-new";
@@ -166,7 +177,7 @@
       <div class="child-wrap">
         <div class="child-title">Alt Projeler</div>
         <div class="child-list" data-parent="${U.esc(parentId)}">
-          ${ordered.map(c => {
+          ${ordered.map((c) => {
             const st = statusOf(c);
             const pct = Math.max(0, Math.min(100, Number(c.yuzde) || 0));
             return `
@@ -192,6 +203,7 @@
     const pct = Math.max(0, Math.min(100, Number(p.yuzde) || 0));
 
     const barColor =
+      st === "cancelled" ? "#6b7280" :
       st === "done" ? "var(--good)" :
       st === "done-dev" ? "var(--focus)" :
       st === "prog" ? "var(--warn)" :
@@ -243,60 +255,47 @@
     if (empty) empty.style.display = "none";
 
     const orderedParents = sortParents(parents, statusKey);
-    host.innerHTML = orderedParents.map(p => parentCardHtml(p, childrenMap)).join("");
+    host.innerHTML = orderedParents.map((p) => parentCardHtml(p, childrenMap)).join("");
 
-    host.querySelectorAll(".card").forEach(card => {
+    host.querySelectorAll(".card").forEach((card) => {
       card.addEventListener("click", (e) => {
-        if (e.target && (e.target.closest(".child-row"))) return;
+        if (e.target && e.target.closest(".child-row")) return;
         if (card.classList.contains("dragging")) return;
         const id = card.getAttribute("data-id");
-        window.App?.openProject?.(id);
+        if (id) window.App?.openProject?.(id);
       });
     });
 
-    host.querySelectorAll(".child-row").forEach(row => {
+    host.querySelectorAll(".child-row").forEach((row) => {
       row.addEventListener("click", (e) => {
         e.stopPropagation();
         if (row.classList.contains("dragging")) return;
         const id = row.getAttribute("data-id");
-        window.App?.openProject?.(id);
+        if (id) window.App?.openProject?.(id);
       });
     });
+  }
 
-    host.querySelectorAll(".card").forEach(el => {
-      el.addEventListener("dragstart", (e) => {
-        el.classList.add("dragging");
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", JSON.stringify({
-          kind: "parent",
-          id: el.getAttribute("data-id"),
-          from: el.getAttribute("data-status")
-        }));
-      });
-      el.addEventListener("dragend", () => {
-        el.classList.remove("dragging");
-        document.querySelectorAll(".cards.drag-over").forEach(x => x.classList.remove("drag-over"));
-        document.querySelectorAll(".child-list.drag-over").forEach(x => x.classList.remove("drag-over"));
-      });
-    });
+  function applySectionLayout(activeStatuses) {
+    const active = Array.isArray(activeStatuses) ? activeStatuses : [];
+    const showKeys = active.length ? [...active] : [...DEFAULT_VISIBLE];
+    const orderedKeys = showKeys.includes("cancelled")
+      ? ["cancelled", ...showKeys.filter((x) => x !== "cancelled")]
+      : showKeys;
 
-    host.querySelectorAll(".child-row").forEach(el => {
-      el.addEventListener("dragstart", (e) => {
-        el.classList.add("dragging");
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", JSON.stringify({
-          kind: "child",
-          id: el.getAttribute("data-id"),
-          parent: el.getAttribute("data-parent")
-        }));
-      });
-      el.addEventListener("dragend", () => el.classList.remove("dragging"));
+    Object.values(STATUS).forEach((meta) => {
+      const section = document.getElementById(meta.sectionId);
+      if (!section) return;
+
+      const isVisible = orderedKeys.includes(meta.key);
+      section.style.display = isVisible ? "" : "none";
+      section.style.order = String(isVisible ? orderedKeys.indexOf(meta.key) : 99);
     });
   }
 
   function getDragAfterElement(container, y, selector) {
     const sel = selector || ".draggable";
-    const els = [...container.querySelectorAll(`${sel}:not(.dragging)`)];
+    const els = [...container.querySelectorAll(`${sel}:not(.dragging)`)]; // eslint-disable-line unicorn/no-array-callback-reference
     let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
 
     for (const child of els) {
@@ -311,15 +310,24 @@
     const p = project;
 
     if (targetStatus === "new") {
-      p.yuzde = 0; p.doneType = null;
+      p.yuzde = 0;
+      p.doneType = null;
     } else if (targetStatus === "prog") {
       const cur = Number(p.yuzde) || 0;
-      p.yuzde = (cur > 0 && cur < 100) ? cur : 50;
+      p.yuzde = cur > 0 && cur < 100 ? cur : 50;
       p.doneType = null;
     } else if (targetStatus === "done") {
-      p.yuzde = 100; p.doneType = "done";
+      p.yuzde = 100;
+      p.doneType = "done";
     } else if (targetStatus === "done-dev") {
-      p.yuzde = 100; p.doneType = "done-dev";
+      p.yuzde = 100;
+      p.doneType = "done-dev";
+    } else if (targetStatus === "cancelled") {
+      p.status = "cancelled";
+    }
+
+    if (targetStatus !== "cancelled") {
+      p.status = "";
     }
 
     p.history = Array.isArray(p.history) ? p.history : [];
@@ -327,10 +335,10 @@
       user: window.App?.state?.me || "Anonim",
       action: "moved",
       date: new Date().toISOString().slice(0, 10),
-      details: `→ ${targetStatus}`
+      details: `→ ${targetStatus}`,
     });
 
-    await window.API.updateProject(p.id, p);
+    await window.API.updateProject?.(p.id, p);
   }
 
   function wireDropZones() {
@@ -361,7 +369,9 @@
         host.classList.remove("drag-over");
 
         let payload;
-        try { payload = JSON.parse(e.dataTransfer.getData("text/plain") || "{}"); } catch {}
+        try {
+          payload = JSON.parse(e.dataTransfer.getData("text/plain") || "{}");
+        } catch {}
         if (payload?.kind !== "parent") return;
 
         const id = payload?.id;
@@ -369,62 +379,131 @@
         const to = host.dataset.status;
         if (!id || !to) return;
 
-        const ids = [...host.querySelectorAll(":scope > .card")].map(x => String(x.getAttribute("data-id")));
+        const ids = [...host.querySelectorAll(":scope > .card")].map((x) => String(x.getAttribute("data-id")));
         const order = loadOrder();
         upsertOrderList(order, to, ids);
 
         if (from && to && from !== to) {
-          const proj = (CURRENT.projects || []).find(x => String(x.id) === String(id));
+          const proj = (CURRENT.projects || []).find((x) => String(x.id) === String(id));
           if (!proj) return;
 
           const copy = JSON.parse(JSON.stringify(proj));
           try {
             await applyStatusMove(copy, to);
-            await window.App.loadProjects();
+            await window.App?.loadProjects?.();
           } catch (err) {
             console.error(err);
-            alert("Sürükle-bırak güncelleme hatası: " + (err.message || err));
+            alert("Sürükle-bırak güncelleme hatası: " + (err?.message || err));
           }
         }
       });
     }
 
-    document.addEventListener("dragover", (e) => {
-      const list = e.target?.closest?.(".child-list");
-      if (!list) return;
-      e.preventDefault();
+    document.addEventListener(
+      "dragover",
+      (e) => {
+        const list = e.target?.closest?.(".child-list");
+        if (!list) return;
+        e.preventDefault();
 
-      const dragging = document.querySelector(".child-row.dragging");
-      if (!dragging) return;
+        const dragging = document.querySelector(".child-row.dragging");
+        if (!dragging) return;
 
-      list.classList.add("drag-over");
-      const after = getDragAfterElement(list, e.clientY, ".child-row");
-      if (after == null) list.appendChild(dragging);
-      else list.insertBefore(dragging, after);
-    }, true);
+        list.classList.add("drag-over");
+        const after = getDragAfterElement(list, e.clientY, ".child-row");
+        if (after == null) list.appendChild(dragging);
+        else list.insertBefore(dragging, after);
+      },
+      true
+    );
 
-    document.addEventListener("dragleave", (e) => {
-      const list = e.target?.closest?.(".child-list");
-      if (list) list.classList.remove("drag-over");
-    }, true);
+    document.addEventListener(
+      "dragleave",
+      (e) => {
+        const list = e.target?.closest?.(".child-list");
+        if (list) list.classList.remove("drag-over");
+      },
+      true
+    );
 
-    document.addEventListener("drop", (e) => {
-      const list = e.target?.closest?.(".child-list");
-      if (!list) return;
+    document.addEventListener(
+      "drop",
+      (e) => {
+        const list = e.target?.closest?.(".child-list");
+        if (!list) return;
 
-      let payload;
-      try { payload = JSON.parse(e.dataTransfer.getData("text/plain") || "{}"); } catch {}
-      if (payload?.kind !== "child") return;
+        let payload;
+        try {
+          payload = JSON.parse(e.dataTransfer.getData("text/plain") || "{}");
+        } catch {}
+        if (payload?.kind !== "child") return;
 
-      const parentId = list.getAttribute("data-parent");
-      if (!parentId || String(parentId) !== String(payload.parent)) return;
+        const parentId = list.getAttribute("data-parent");
+        if (!parentId || String(parentId) !== String(payload.parent)) return;
 
-      const ids = [...list.querySelectorAll(".child-row")].map(x => String(x.getAttribute("data-id")));
-      setChildOrder(parentId, ids);
+        const ids = [...list.querySelectorAll(".child-row")].map((x) => String(x.getAttribute("data-id")));
+        setChildOrder(parentId, ids);
 
-      list.classList.remove("drag-over");
-    }, true);
+        list.classList.remove("drag-over");
+      },
+      true
+    );
   }
+
+  document.addEventListener("click", (e) => {
+    const child = e.target?.closest(".child-row");
+    if (child) {
+      if (child.classList.contains("dragging")) return;
+      const id = child.getAttribute("data-id");
+      if (id) window.App?.openProject?.(id);
+      return;
+    }
+
+    const card = e.target?.closest(".card");
+    if (!card) return;
+    if (card.classList.contains("dragging")) return;
+    if (e.target?.closest(".child-row")) return;
+    const id = card.getAttribute("data-id");
+    if (id) window.App?.openProject?.(id);
+  });
+
+  document.addEventListener("dragstart", (e) => {
+    const card = e.target?.closest(".card");
+    if (card) {
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData(
+        "text/plain",
+        JSON.stringify({
+          kind: "parent",
+          id: card.getAttribute("data-id"),
+          from: card.getAttribute("data-status"),
+        })
+      );
+      return;
+    }
+
+    const child = e.target?.closest(".child-row");
+    if (child) {
+      child.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData(
+        "text/plain",
+        JSON.stringify({
+          kind: "child",
+          id: child.getAttribute("data-id"),
+          parent: child.getAttribute("data-parent"),
+        })
+      );
+    }
+  });
+
+  document.addEventListener("dragend", () => {
+    document.querySelectorAll(".card.dragging").forEach((el) => el.classList.remove("dragging"));
+    document.querySelectorAll(".child-row.dragging").forEach((el) => el.classList.remove("dragging"));
+    document.querySelectorAll(".cards.drag-over").forEach((el) => el.classList.remove("drag-over"));
+    document.querySelectorAll(".child-list.drag-over").forEach((el) => el.classList.remove("drag-over"));
+  });
 
   const Dashboard = {
     statusOf,
@@ -435,23 +514,29 @@
       const all = Array.isArray(projects) ? projects : [];
       CURRENT.projects = all;
 
-      const allowed = new Set(["new", "prog", "done-dev", "done"]);
+      const allowed = new Set(["new", "prog", "done-dev", "done", "cancelled"]);
       const active = [];
 
       if (filterStatuses && typeof filterStatuses.forEach === "function") {
         filterStatuses.forEach((st) => { if (allowed.has(st)) active.push(st); });
       }
 
-      const list = active.length ? all.filter((p) => active.includes(statusOf(p))) : all;
+      const list = active.length
+        ? all.filter((p) => active.includes(statusOf(p)))
+        : all.filter((p) => statusOf(p) !== "cancelled");
 
-      // KPI
-      const total = list.length;
-      const by = { new: 0, prog: 0, "done-dev": 0, done: 0 };
+      const total = all.length;
+      const by = { new: 0, prog: 0, "done-dev": 0, done: 0, cancelled: 0 };
       let sumPct = 0;
-      for (const p of list) {
+      let activePctCount = 0;
+
+      for (const p of all) {
         const st = statusOf(p);
         by[st] = (by[st] || 0) + 1;
-        sumPct += (Number(p.yuzde) || 0);
+        if (st !== "cancelled") {
+          sumPct += (Number(p.yuzde) || 0);
+          activePctCount += 1;
+        }
       }
 
       U.qs("#kTotal") && (U.qs("#kTotal").textContent = String(total));
@@ -459,18 +544,17 @@
       U.qs("#kProg") && (U.qs("#kProg").textContent = String(by.prog));
       U.qs("#kDoneDev") && (U.qs("#kDoneDev").textContent = String(by["done-dev"]));
       U.qs("#kDone") && (U.qs("#kDone").textContent = String(by.done));
-      U.qs("#kAvg") && (U.qs("#kAvg").textContent = total ? `${Math.round(sumPct / total)}%` : "0%");
+      U.qs("#kCancelled") && (U.qs("#kCancelled").textContent = String(by.cancelled));
+      U.qs("#kAvg") && (U.qs("#kAvg").textContent = activePctCount ? `${Math.round(sumPct / activePctCount)}%` : "0%");
 
-      // Search
       const q = String(U.qs("#q")?.value || "").toLowerCase().trim();
       const filtered = q
-        ? list.filter(p => (String(p.ad || "") + " " + String(p.aciklama || "")).toLowerCase().includes(q))
+        ? list.filter((p) => (String(p.ad || "") + " " + String(p.aciklama || "")).toLowerCase().includes(q))
         : list;
 
-      // children map
       const childrenMap = new Map();
       const parents = [];
-      const byId = new Map(filtered.map(x => [String(x.id), x]));
+      const byId = new Map(filtered.map((x) => [String(x.id), x]));
 
       for (const p of filtered) {
         const pid = String(p.parentId || "");
@@ -482,15 +566,15 @@
         }
       }
 
-      // status groups
-      const groups = { new: [], prog: [], "done-dev": [], done: [] };
+      const groups = { new: [], prog: [], "done-dev": [], done: [], cancelled: [] };
       for (const p of parents) groups[statusOf(p)].push(p);
 
       renderSection("new", groups.new, childrenMap);
       renderSection("prog", groups.prog, childrenMap);
       renderSection("done-dev", groups["done-dev"], childrenMap);
       renderSection("done", groups.done, childrenMap);
-
+      renderSection("cancelled", groups.cancelled, childrenMap);
+      applySectionLayout(active);
       wireDropZones();
     }
   };

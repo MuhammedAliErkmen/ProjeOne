@@ -5,6 +5,7 @@ const { mapProjectRowToUi } = require("../mappers/projectMapper");
 const { asStr, asIdStr, asInt, normalizeDoneType, newProjectId } = require("../utils/convert");
 
 const MAX_TEXT_LEN = 2000;
+const ALLOWED_STATUS = new Set(["", "new", "prog", "done-dev", "done", "cancelled"]);
 
 function ensureMaxLen(label, value) {
   const v = asStr(value);
@@ -55,6 +56,18 @@ function toHistoryArray(historyLike) {
       details: asStr(x?.details).trim(),
     }))
     .filter((x) => x.user || x.action || x.date || x.details);
+}
+
+function normalizeProjectStatus(statusRaw, yuzde, doneType) {
+  const raw = asStr(statusRaw).trim().toLowerCase();
+  if (raw === "cancelled") return "cancelled";
+  if (ALLOWED_STATUS.has(raw)) return "";
+
+  if (Number(yuzde) >= 100) {
+    return String(doneType || "").toLowerCase() === "done-dev" ? "done-dev" : "done";
+  }
+  if (Number(yuzde) > 0) return "prog";
+  return "new";
 }
 
 /* =========================
@@ -148,6 +161,7 @@ async function createProject(p, actor) {
 
   const yuzde = asInt(p.yuzde, 0);
   const doneType = yuzde >= 100 ? normalizeDoneType(p.doneType) : null;
+  const status = normalizeProjectStatus(p.status, yuzde, doneType);
 
   const id = newProjectId();
   const parentId = asIdStr(p.parentId);
@@ -162,6 +176,7 @@ async function createProject(p, actor) {
   ensureMaxLen("Son Teslim Edilen", p.sonTeslimEdilen);
   ensureMaxLen("Öncelik", p.priority || "Normal");
   ensureMaxLen("Durum Tipi", doneType);
+  ensureMaxLen("Durum", status);
   ensureMaxLen("Üst Proje", parentId);
 
   ensureMaxLenForArray("Ekip Üyesi", owners, (x) => x);
@@ -196,6 +211,7 @@ async function createProject(p, actor) {
       sonTeslimEdilen: asStr(p.sonTeslimEdilen),
       priority: asStr(p.priority || "Normal"),
       doneType,
+      status,
       createdAt: now,
       updatedAt: now,
     });
@@ -232,6 +248,7 @@ async function updateProject(idParam, p, actor) {
 
   const yuzde = asInt(p.yuzde, 0);
   const doneType = yuzde >= 100 ? normalizeDoneType(p.doneType) : null;
+  const status = normalizeProjectStatus(p.status, yuzde, doneType);
 
   const parentId = asIdStr(p.parentId);
 
@@ -245,6 +262,7 @@ async function updateProject(idParam, p, actor) {
   ensureMaxLen("Son Teslim Edilen", p.sonTeslimEdilen);
   ensureMaxLen("Öncelik", p.priority || "Normal");
   ensureMaxLen("Durum Tipi", doneType);
+  ensureMaxLen("Durum", status);
   ensureMaxLen("Üst Proje", parentId);
 
   ensureMaxLenForArray("Ekip Üyesi", owners, (x) => x);
@@ -278,6 +296,7 @@ async function updateProject(idParam, p, actor) {
       sonTeslimEdilen: asStr(p.sonTeslimEdilen),
       priority: asStr(p.priority || "Normal"),
       doneType,
+      status,
       updatedAt: now,
     });
 

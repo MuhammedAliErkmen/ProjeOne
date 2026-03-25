@@ -46,6 +46,7 @@ BEGIN
     baslangicTarihi NVARCHAR(2000) NULL,
     sonTeslimEdilen NVARCHAR(2000) NULL,
     priority        NVARCHAR(2000) NULL CONSTRAINT DF_Projects_Priority DEFAULT(N'Normal'),
+    status          NVARCHAR(50)   NULL,
     createdAt       DATETIME2(0)   NOT NULL CONSTRAINT DF_Projects_CreatedAt DEFAULT(SYSDATETIME()),
     updatedAt       DATETIME2(0)   NOT NULL CONSTRAINT DF_Projects_UpdatedAt DEFAULT(SYSDATETIME()),
     doneType        NVARCHAR(2000) NULL, -- done | done-dev
@@ -80,6 +81,8 @@ IF COL_LENGTH(N'dbo.Projects', N'priority') IS NOT NULL AND COL_LENGTH(N'dbo.Pro
   ALTER TABLE dbo.Projects ALTER COLUMN priority NVARCHAR(2000) NULL;
 IF COL_LENGTH(N'dbo.Projects', N'doneType') IS NOT NULL AND COL_LENGTH(N'dbo.Projects', N'doneType') <> 4000
   ALTER TABLE dbo.Projects ALTER COLUMN doneType NVARCHAR(2000) NULL;
+IF COL_LENGTH(N'dbo.Projects', N'status') IS NULL
+  ALTER TABLE dbo.Projects ADD status NVARCHAR(50) NULL;
 GO
 
 /* =========================
