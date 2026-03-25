@@ -2,7 +2,7 @@
 (function () {
   const DEFAULT_TIMEOUT_MS = 15000;
   const TOKEN_KEY = "auth_token";
-  const API_BASE = "";
+  const API_BASE = "http://localhost:3001";
 
   function getToken() {
     try { return localStorage.getItem(TOKEN_KEY) || ""; }
